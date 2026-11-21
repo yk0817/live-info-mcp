@@ -1,0 +1,16 @@
+{
+  "name": "@live-info/mcp",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "types": "wrangler types",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@live-info/schema": "*",
+    "@modelcontextprotocol/server": "^2.4.0",
+    "agents": "^0.34.0",
+    "zod": "^4.6.7"
+  }
+}

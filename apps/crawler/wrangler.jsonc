@@ -1,0 +1,23 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "live-info-crawler",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-19",
+  "compatibility_flags": ["nodejs_compat"],
+  "triggers": { "crons": ["0 * * * *"] },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "live-info",
+      // PLACEHOLDER: the real database_id is set at deploy time. `wrangler dev` uses local persistence.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "../../migrations"
+    }
+  ],
+  "r2_buckets": [{ "binding": "RAW_HTML", "bucket_name": "live-info-raw-html" }],
+  "queues": {
+    "producers": [{ "binding": "CRAWL_QUEUE", "queue": "live-info-crawl" }],
+    "consumers": [{ "queue": "live-info-crawl", "max_batch_size": 10, "max_retries": 3 }]
+  },
+  "ai": { "binding": "AI" }
+}

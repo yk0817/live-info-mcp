@@ -1,0 +1,11 @@
+{
+  "name": "@live-info/crawler",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --test-scheduled",
+    "types": "wrangler types",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": { "@live-info/schema": "*" }
+}

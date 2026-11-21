@@ -19,5 +19,7 @@
     "producers": [{ "binding": "CRAWL_QUEUE", "queue": "live-info-crawl" }],
     "consumers": [{ "queue": "live-info-crawl", "max_batch_size": 10, "max_retries": 3 }]
   },
+  "durable_objects": { "bindings": [{ "name": "DOMAIN_GATE", "class_name": "DomainGate" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DomainGate"] }],
   "ai": { "binding": "AI" }
 }

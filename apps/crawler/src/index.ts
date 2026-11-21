@@ -1,10 +1,17 @@
 import { venueIdSchema } from '@live-info/schema'
+import type { DomainGate } from './fetch/domain-gate'
+
+// wrangler が DO クラスをエントリから見つけられるよう再エクスポートする
+export { DomainGate } from './fetch/domain-gate'
 
 export interface Env {
   DB: D1Database
   RAW_HTML: R2Bucket
   CRAWL_QUEUE: Queue<CrawlJob>
   AI: Ai
+  DOMAIN_GATE: DurableObjectNamespace<DomainGate>
+  // User-Agent に載せる掲載停止窓口の URL。未設定ならプレースホルダー
+  CRAWLER_CONTACT_URL?: string
 }
 
 export interface CrawlJob {

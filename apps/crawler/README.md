@@ -20,7 +20,7 @@ flowchart LR
 
 ## User-Agent と連絡先
 
-`live-info-mcp-crawler/0.1 (+<連絡先 URL>)`。URL は環境変数 `CRAWLER_CONTACT_URL` で渡す。未設定の間は `https://example.com/crawler` のプレースホルダーで動くので、公開前に掲載停止の窓口 URL を設定すること（個人情報は入れない）。
+`live-info-mcp-crawler/0.1 (+<連絡先 URL>)`。URL は環境変数 `CRAWLER_CONTACT_URL` で渡す。未設定の間は連絡先を付けず、`live-info-mcp-crawler/0.1` だけで名乗る（他人のドメインを連絡先に見せかけないため）。毎日の自動実行を始める前に、掲載停止の窓口 URL を必ず設定すること（個人情報は入れない）。
 
 ## ドメインの間隔
 
@@ -71,7 +71,7 @@ node scripts/serve-fixtures.mjs 8899
 
 # 2. D1 の準備（apps/crawler で）
 cd apps/crawler
-printf 'CRAWL_FORCE=1\nCRAWLER_CONTACT_URL=https://example.com/crawler\n' > .dev.vars   # gitignore 済み
+printf 'CRAWL_FORCE=1\n' > .dev.vars   # gitignore 済み
 npx wrangler d1 migrations apply live-info --local --persist-to ../../.wrangler/state
 for f in venues sources source-configs dev-local-sources; do
   npx wrangler d1 execute live-info --local --persist-to ../../.wrangler/state --file ../../seeds/$f.sql

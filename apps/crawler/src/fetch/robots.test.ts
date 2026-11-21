@@ -93,9 +93,10 @@ describe('reserveSlot (fake clock)', () => {
 })
 
 describe('buildUserAgent', () => {
-  it('uses the configured contact URL, or a placeholder', () => {
+  // Contract: 連絡先が未設定のときは、他人のドメインを連絡先に見せかけず、連絡先を付けない
+  it('adds the contact URL only when configured', () => {
     expect(buildUserAgent('https://x.test/c')).toBe('live-info-mcp-crawler/0.1 (+https://x.test/c)')
-    expect(buildUserAgent(undefined)).toBe('live-info-mcp-crawler/0.1 (+https://example.com/crawler)')
-    expect(buildUserAgent('  ')).toBe('live-info-mcp-crawler/0.1 (+https://example.com/crawler)')
+    expect(buildUserAgent(undefined)).toBe('live-info-mcp-crawler/0.1')
+    expect(buildUserAgent('  ')).toBe('live-info-mcp-crawler/0.1')
   })
 })

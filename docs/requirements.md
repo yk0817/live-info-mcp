@@ -82,7 +82,7 @@ flowchart TD
 
 - **A（設定 JSON）**: 会場ごとに「公演の要素・日付・出演者・時刻・チケット URL がどこにあるか」を CSS セレクタと正規表現で書いた JSON。開発時に、Claude Code 上の Sonnet がページを 1 度読んで書く（人が起動する。実行時に Sonnet は呼ばない）。実行は共通のクローラー 1 つで、LLM は使わない。D1 の `sources` に置くので、直してもデプロイは要らない
 - **B（会場別コード / Playwright）**: A で書けない会場だけ。Sonnet が書き、保存済み HTML をフィクスチャにしたテストを付けて PR にする。マージは人が行う。Workers では `eval` が使えないため、実行時に読み込む形にはできず、デプロイが要る
-- JS で描画されるだけのページは、Browser Run で描画した HTML を A で読む（B ではない）。ボタン操作が要るページだけ Playwright を使う（Browser Run が Playwright に対応することは実装前に確認する）
+- JS で描画されるだけのページは、Browser Run で描画した HTML を A で読む（B ではない）。ボタン操作が要るページだけ Playwright を使う（確認済み 2026-11-21: Browser Run は `@cloudflare/playwright`（v1.3.0 以上）で Playwright に対応し、Worker からは `browser` バインディングで `launch(env.MYBROWSER)` する。描画済み HTML だけなら、バインディングの `quickAction("content", { url })` が使える。`/content` の返り値の形式は実際に呼んで確かめる）
 - 実行時の LLM は Cloudflare（Workers AI）だけにする。Sonnet は開発時のプログラミング（設定 JSON・会場別コード・実装）専用で、実行時には呼ばない
 - 実行時の LLM 抽出（Workers AI）は、ルールが壊れたときの予備に下げる。検証に落ちたものを大きいモデルへ上げる場合も、Workers AI の中でモデルを切り替える
 - HTML パーサーは `linkedom` や `node-html-parser` と HTMLRewriter を T4〜T6 で比べて選ぶ（Workers での動作は未検証）
@@ -124,7 +124,9 @@ flowchart TD
 - 公開範囲を「認証なし」から「Bearer トークンで限定」に変更
 - 未決事項から「公開前の弁護士確認」を削除
 - 実行時の LLM は Workers AI のみとし、Sonnet は開発時のプログラミング専用にする。実行時の LLM 抽出は予備に格下げし、Sonnet の 1 日 50 回の上限は置かず、Workers AI の使用量を日別に数えて通知する
-- `createMcpHandler`（`agents/mcp/server`）と MCP SDK v2 は、T1 の前に公式ドキュメントで確認する
+- `createMcpHandler`（`agents/mcp/server`）と MCP SDK v2 は、公式ドキュメントで確認済み（2026-11-21）。パッケージは `@modelcontextprotocol/server`（`@modelcontextprotocol/sdk` ではない）で、`agents` の任意の peer dependency になる。バージョンは、入れた `agents` が要求するものに合わせる（ドキュメントの例は 2.3.1）。ハンドラーには、サーバーのインスタンスでなく生成関数を渡す。既定のパスは `/mcp`
+- Browser Run の料金と上限（確認済み 2026-11-21）: Workers Paid で月 10 時間まで含み、超過は 1 時間 0.09 ドル。Quick Actions は毎秒 30 リクエストまで。MVP の見積もり（月 3.3 時間）は含まれる範囲に収まる
+- wrangler の設定は、MCP のドキュメントのページに無かった（Playwright 側のページには `nodejs_compat` と新しい `compatibility_date` が必要とある）。T1 で実際に `wrangler dev` を動かして決める
 
 ## 収益化の方向（決定は方向のみ。実装は条件が揃ってから）
 

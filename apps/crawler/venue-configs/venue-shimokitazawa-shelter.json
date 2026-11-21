@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "strategy": "dom",
+  "comment": "LOFT PROJECT 共通テーマ。日付は time 内の year/month/day を空白区切りで拾う。.soldout は「予約は締めきりました」で完売とは限らないので status には写さない（null のまま）。open が空のカードは時刻 null。出演者末尾の <li>...</li> は省略記号なので除外。",
+  "url_template": "https://www.loft-prj.co.jp/schedule/shelter/schedule?scheduleyear={YYYY}&schedulemonth={M}",
+  "item": ".block_schedule_list .list > .column",
+  "fields": {
+    "date": {
+      "source": { "selector": "time" },
+      "pattern": "(?<year>\\d{4})\\s+(?<month>\\d{1,2})\\s+(?<day>\\d{1,2})"
+    },
+    "title": { "sources": [{ "selector": ".c_title span" }], "mode": "first" },
+    "artists": { "selector": ".artist_tag li", "exclude": ["^(\\.{2,}|…|and more…?)$"] },
+    "times": {
+      "source": { "selector": ".open" },
+      "patterns": [
+        "OPEN\\s*(?<open>\\d{1,2}:\\d{2})\\s*-\\s*START\\s*(?<start>\\d{1,2}:\\d{2})",
+        "START\\s*(?<start>\\d{1,2}:\\d{2})",
+        "OPEN\\s*(?<open>\\d{1,2}:\\d{2})"
+      ]
+    },
+    "detail_url": { "selector": "a", "attr": "href" }
+  }
+}

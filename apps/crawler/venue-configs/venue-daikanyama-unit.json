@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "strategy": "dom",
+  "comment": "月別ページ（WordPress）。日付は 11/01 形式で、年はページ見出し（2026.11）から取る。一覧に start 時刻はなく open のみ（start は詳細ページにあるかもしれないが未確認）。タイトルは補助行 title-top / title / title-bottom を連結。【公演中止】はタイトルに入るので cancelled に写す。カテゴリ（RECOMMEND/FEATURE）は status ではないので使わない。JSON-LD の Event は時刻も出演者名も持たないので使わない。",
+  "url_template": "https://www.unit-tokyo.com/schedule/{YYYY}-{MM}/",
+  "item": ".p-schedule__body > .p-schedule__item",
+  "fields": {
+    "date": {
+      "source": { "selector": ".p-schedule__item-date" },
+      "pattern": "(?<month>\\d{1,2})/(?<day>\\d{1,2})",
+      "year_source": {
+        "source": { "from": "page", "selector": ".p-schedule__header-title" },
+        "pattern": "(?<year>\\d{4})"
+      }
+    },
+    "title": {
+      "sources": [
+        { "selector": ".p-schedule__item-title-top" },
+        { "selector": ".p-schedule__item-title" },
+        { "selector": ".p-schedule__item-title-bottom" }
+      ],
+      "mode": "join"
+    },
+    "artists": {
+      "selector": ".p-schedule__item-lineup",
+      "split": "\\s*[/／]\\s*",
+      "strip": ["\\s*※順不同$"]
+    },
+    "times": {
+      "source": { "selector": ".p-schedule__item-open" },
+      "patterns": ["OPEN\\s*(?<open>\\d{1,2}:\\d{2})"]
+    },
+    "detail_url": { "selector": "a", "attr": "href" },
+    "status": [{ "value": "cancelled", "when": { "text_matches": "【公演中止】" } }]
+  }
+}

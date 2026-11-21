@@ -5,5 +5,5 @@ INSERT OR IGNORE INTO sources (id, kind, url, parser, config_json, robots_ok, ne
   ('src_venue-shimokitazawa-shelter', 'venue', 'https://www.loft-prj.co.jp/schedule/shelter/schedule', 'rule', NULL, 1, 1),
   ('src_venue-shinjuku-loft', 'venue', 'https://www.loft-prj.co.jp/schedule/loft/schedule', 'rule', NULL, 1, 1),
   ('src_venue-shibuya-duo', 'venue', 'https://www.duomusicexchange.com/schedule/2026/index_2026-11.html', 'rule', NULL, 1, 1),
-  ('src_venue-shibuya-womb', 'venue', 'https://www.womb.co.jp/ja/events', 'rule', NULL, 1, 1),
+  ('src_venue-shibuya-womb', 'venue', 'https://www.womb.co.jp/ja', 'rule', NULL, 1, 1),
   ('src_venue-daikanyama-unit', 'venue', 'https://www.unit-tokyo.com/schedule/', 'rule', NULL, 1, 1);

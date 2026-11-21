@@ -14,7 +14,8 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "vitest run",
     "dev:crawler": "npm run dev -w @live-info/crawler",
-    "dev:mcp": "npm run dev -w @live-info/mcp"
+    "dev:mcp": "npm run dev -w @live-info/mcp",
+    "seed:configs": "node scripts/gen-source-configs.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261121.1",

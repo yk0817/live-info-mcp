@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "strategy": "dom",
+  "comment": "月別の静的ページ。日付は section の直前にある <a name=\"YYMMDD\"> から取る。出演者欄（.artist）は公演名のことも多く、タイトルは .details-title が空なら .artist で補う。時刻は dt が OPEN/START の次の dd から取り、「15:00 / 16:00」は open/start、24:00 のような単独値は start のみ（open なし）。1 日 2 部の「①13:45 / 14:30 ②18:15 / 19:00」は先頭の部だけを取る（2 部目は未対応）。完売表記はページに無く、延期告知はあっても status は割り当てない。",
+  "url_template": "https://www.duomusicexchange.com/schedule/{YYYY}/index_{YYYY}-{MM}.html",
+  "item": "section#daybox",
+  "fields": {
+    "date": {
+      "source": { "from": "prev-sibling", "attr": "name" },
+      "pattern": "^(?<yy>\\d{2})(?<month>\\d{2})(?<day>\\d{2})$"
+    },
+    "title": {
+      "sources": [{ "selector": ".details-title" }, { "selector": ".artist" }],
+      "mode": "first"
+    },
+    "artists": {
+      "selector": ".artist",
+      "split": "\\s*[/／\\n]\\s*",
+      "strip": ["【[^】]*】"]
+    },
+    "times": {
+      "source": { "label": { "selector": "dt", "pattern": "^OPEN/START$" } },
+      "patterns": [
+        "(?<open>\\d{1,2}:\\d{2})\\s*/\\s*(?<start>\\d{1,2}:\\d{2})",
+        "^(?<start>\\d{1,2}:\\d{2})$"
+      ]
+    },
+    "price_text": { "label": { "selector": "dt", "pattern": "^ADV\\./DOOR$" } },
+    "ticket_url": { "label": { "selector": "dt", "pattern": "^Ticket\\.$" }, "selector": "a", "attr": "href" }
+  }
+}

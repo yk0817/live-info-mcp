@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@live-info/schema": "*",
-    "node-html-parser": "^9.0.7"
+    "node-html-parser": "^9.0.7",
+    "zod": "^4.6.7"
   }
 }

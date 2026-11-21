@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "strategy": "dom",
+  "comment": "LOFT PROJECT 共通テーマ（SHELTER と同じ構造）。メンテナンス等の非公演カードは skip で落とす。24:00 のような深夜開演はそのまま受け入れる。出演者末尾の <li>...</li> と <li>and more…</li> は省略記号なので除外。",
+  "url_template": "https://www.loft-prj.co.jp/schedule/loft/schedule?scheduleyear={YYYY}&schedulemonth={M}",
+  "item": ".block_schedule_list .list > .column",
+  "skip": [
+    {
+      "reason": "non-event: maintenance",
+      "when": {
+        "in": ".c_title",
+        "text_matches": "^メンテナンス$"
+      }
+    }
+  ],
+  "fields": {
+    "date": {
+      "source": {
+        "selector": "time"
+      },
+      "pattern": "(?<year>\\d{4})\\s+(?<month>\\d{1,2})\\s+(?<day>\\d{1,2})"
+    },
+    "title": {
+      "sources": [
+        {
+          "selector": ".c_title span"
+        }
+      ],
+      "mode": "first"
+    },
+    "artists": {
+      "selector": ".artist_tag li",
+      "exclude": [
+        "^(\\.{2,}|…|and more…?)$"
+      ]
+    },
+    "times": {
+      "source": {
+        "selector": ".open"
+      },
+      "patterns": [
+        "OPEN\\s*(?<open>\\d{1,2}:\\d{2})\\s*-\\s*START\\s*(?<start>\\d{1,2}:\\d{2})",
+        "START\\s*(?<start>\\d{1,2}:\\d{2})",
+        "OPEN\\s*(?<open>\\d{1,2}:\\d{2})"
+      ]
+    },
+    "detail_url": {
+      "selector": "a",
+      "attr": "href"
+    }
+  }
+}

@@ -1,0 +1,12 @@
+CREATE INDEX idx_events_venue_date ON events (venue_id, date);
+CREATE INDEX idx_events_start_at ON events (start_at);
+CREATE INDEX idx_events_fingerprint ON events (fingerprint);
+CREATE INDEX idx_events_needs_review ON events (needs_review) WHERE needs_review = 1;
+CREATE INDEX idx_event_artists_artist ON event_artists (artist_id);
+CREATE INDEX idx_artists_name_ja ON artists (name_ja);
+CREATE INDEX idx_artists_name_en ON artists (name_en);
+CREATE INDEX idx_venues_prefecture_city ON venues (prefecture, city);
+CREATE INDEX idx_sources_robots_kind ON sources (robots_ok, kind);
+CREATE INDEX idx_observations_source ON observations (source_id);
+CREATE INDEX idx_observations_event ON observations (event_id);
+CREATE INDEX idx_crawl_runs_source_started ON crawl_runs (source_id, started_at);

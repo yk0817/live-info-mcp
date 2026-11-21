@@ -17,7 +17,9 @@
   "r2_buckets": [{ "binding": "RAW_HTML", "bucket_name": "live-info-raw-html" }],
   "queues": {
     "producers": [{ "binding": "CRAWL_QUEUE", "queue": "live-info-crawl" }],
-    "consumers": [{ "queue": "live-info-crawl", "max_batch_size": 10, "max_retries": 3 }]
+    // 1 通ずつ・同時 1 本で処理する。同一ドメインへの 5 秒間隔は DomainGate が守るが、並列に呼び出しが走ると
+    // 待ち時間が重なって Worker の実行時間を食うだけで速くならない。max_retries は runSource の再試行上限（5 回）に合わせる。
+    "consumers": [{ "queue": "live-info-crawl", "max_batch_size": 1, "max_concurrency": 1, "max_retries": 5 }]
   },
   "durable_objects": { "bindings": [{ "name": "DOMAIN_GATE", "class_name": "DomainGate" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DomainGate"] }],

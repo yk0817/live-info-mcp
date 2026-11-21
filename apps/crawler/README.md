@@ -1,6 +1,6 @@
 # apps/crawler
 
-Cron・Queue コンシューマー・抽出を担う Worker。いまは取得（`src/fetch/`）と変化検知・生 HTML 保存（`src/change/`）まで。
+Cron・Queue コンシューマー・抽出を担う Worker。取得（`src/fetch/`）→ 変化検知・生 HTML 保存（`src/change/`）→ 抽出（`src/extract/`）→ D1 保存（`src/store/`）を `src/pipeline/` がつなぐ。
 
 ## 概要
 
@@ -35,3 +35,57 @@ wrangler r2 bucket lifecycle add live-info-raw-html raw-html-30d raw/ --expire-d
 ```
 
 コマンドの形（位置引数 `<bucket> [name] [prefix]` と `--expire-days`）は `wrangler r2 bucket lifecycle add --help` で確認した。実際のバケットに対する適用は未実行（リモートのリソースは作っていない）なので、デプロイ時に `wrangler r2 bucket lifecycle list live-info-raw-html` で反映を確かめる。
+
+## パイプライン（runSource）
+
+```mermaid
+flowchart TD
+  Cron[scheduled 毎時] --> Due["期限の来た source を選ぶ<br>robots_ok=1・設定あり・直近 20 時間に実行なし<br>CRAWL_FORCE=1 なら間隔を無視"]
+  Due --> Q[CRAWL_QUEUE<br>source_id と attempt を Zod で検証]
+  Q --> Run[runSource]
+  Run --> F{conditionalFetch}
+  F -- blocked --> B["crawl_runs に robots:...<br>disallowed なら robots_ok=0"]
+  F -- retry --> R["msg.retry(delaySeconds)<br>attempt 5 で諦めて記録"]
+  F -- error --> E[crawl_runs に記録]
+  F -- 304 / 変化なし --> V["今日以降の公演の last_verified_at を進める"]
+  F -- 変化あり --> X[生 HTML を R2 へ → 抽出]
+  X --> G{件数が前回の半分未満?}
+  G -- はい --> D["count_drop を記録<br>何も書かない・ハッシュも進めない"]
+  G -- いいえ --> S["過去日は除外・検証<br>同一判定して公演・出演者・観測を書く"]
+```
+
+- source id は `src_<venue_id>`。URL は設定に `url_template` があれば `now`（JST）で埋め、無ければ `sources.url`
+- 検証の issue があった公演（出演者なし・時刻拒否など）は保存して `needs_review = 1`。実在しない日付だけ捨てる。過去日は黙って捨てる（`skipped_past`）
+- 同一判定（`src/store/plan.ts`）は requirements 設計判断 1 の規則に、同じ id（venue・date・start・title）なら同一、を足したもの。1 回の実行で既存の 1 公演に当たれるのは 1 件まで。同じ実行で入れた同日の兄弟カードは「既存」に数えず flag しない
+- `needs_review` は一度立てたら更新では下ろさない。変化なしの回は `updated_at` を動かさず `last_verified_at` だけ進める
+- Queue は `max_batch_size: 1`・`max_concurrency: 1`。再試行の回数は配送回数（`msg.attempts`）で数える
+- 変化なしの回の `last_verified_at` 更新は「これまでに観測した今日以降の公演」すべてが対象で、ページから消えた公演の検出は未実装（T12）
+
+## ローカル実行（実サイトに触れない）
+
+フィクスチャをローカルの HTTP で配り、`wrangler dev` で crawler と MCP を通す。永続化先を `--persist-to ../../.wrangler/state` に揃えると apps/mcp と同じ D1 を見る。
+
+```sh
+# 1. フィクスチャ配信（別ターミナル）
+node scripts/serve-fixtures.mjs 8899
+
+# 2. D1 の準備（apps/crawler で）
+cd apps/crawler
+printf 'CRAWL_FORCE=1\nCRAWLER_CONTACT_URL=https://example.com/crawler\n' > .dev.vars   # gitignore 済み
+npx wrangler d1 migrations apply live-info --local --persist-to ../../.wrangler/state
+for f in venues sources source-configs dev-local-sources; do
+  npx wrangler d1 execute live-info --local --persist-to ../../.wrangler/state --file ../../seeds/$f.sql
+done
+
+# 3. 起動して cron を手動で発火（5 会場ぶん、5 秒間隔のゲートがあるので 2 分ほど待つ）
+npx wrangler dev --test-scheduled --port 8787 --persist-to ../../.wrangler/state
+curl "http://localhost:8787/cdn-cgi/handler/scheduled"
+
+# 4. 結果
+npx wrangler d1 execute live-info --local --persist-to ../../.wrangler/state \
+  --command "SELECT venue_id, COUNT(*) FROM events GROUP BY venue_id"
+npx wrangler d1 execute live-info --local --persist-to ../../.wrangler/state \
+  --command "SELECT source_id, http_status, changed, error FROM crawl_runs"
+```
+
+`seeds/dev-local-sources.sql` は取得先をローカル URL に向け、月別の `url_template` を `json_remove` で外す（残すと実サイトを取りに行く）。本番には流さない。同じフィクスチャでの 2 回目の実行は `changed = 0` になり、公演は増えない。MCP は `apps/mcp/README.md` の手順で `--port 8791` に起動して引く。

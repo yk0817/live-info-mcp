@@ -1,0 +1,2 @@
+# Copy to .dev.vars (gitignored). Comma-separated list of accepted Bearer tokens.
+MCP_TOKENS=replace-me-with-a-long-random-string

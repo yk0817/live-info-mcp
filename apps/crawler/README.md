@@ -22,6 +22,8 @@ flowchart LR
 
 `live-info-mcp-crawler/0.1 (+<連絡先 URL>)`。URL は環境変数 `CRAWLER_CONTACT_URL` で渡す。未設定の間は連絡先を付けず、`live-info-mcp-crawler/0.1` だけで名乗る（他人のドメインを連絡先に見せかけないため）。毎日の自動実行を始める前に、掲載停止の窓口 URL を必ず設定すること（個人情報は入れない）。
 
+本番へのデプロイ手順は [docs/deploy.md](../../docs/deploy.md)。
+
 ## ドメインの間隔
 
 `DomainGate`（SQLite バックエンドの Durable Object、ドメインごとに 1 インスタンス）が同一ドメインへのリクエストを 5 秒以上あける。robots.txt の `Crawl-delay` が大きければそちらに従う。`wrangler.jsonc` の `migrations` で `new_sqlite_classes` として登録済み。

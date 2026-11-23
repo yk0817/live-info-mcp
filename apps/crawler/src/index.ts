@@ -11,7 +11,7 @@ export interface Env {
   CRAWL_QUEUE: Queue<CrawlJob>
   AI: Ai
   DOMAIN_GATE: DurableObjectNamespace<DomainGate>
-  // User-Agent に載せる掲載停止窓口の URL。未設定ならプレースホルダー
+  // User-Agent に載せる掲載停止窓口の URL。未設定なら連絡先を付けない
   CRAWLER_CONTACT_URL?: string
   // '1' なら 20 時間の実行間隔を無視して全 source を回す（ローカル実行用）
   CRAWL_FORCE?: string

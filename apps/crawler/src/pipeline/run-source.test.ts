@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest'
 import { fixtureHtml, harness, NOW, rows, sourceIdOf, VENUE_IDS, type Harness, type VenueId } from './test-support'
 import { runSource } from './run-source'
 
-// 2026-11-21 12:00 JST 時点の、各会場フィクスチャの公演数（抽出した件数 − 過去日 − 同じカードの重複）
+// 2026-11-21 12:00 JST 時点の、各会場の合成フィクスチャの公演数（抽出した件数 − 過去日 − 同じカードの重複）
 const EXPECTED: Record<VenueId, { extracted: number; past: number; stored: number; duplicates: number }> = {
-  'venue-shimokitazawa-shelter': { extracted: 38, past: 25, stored: 13, duplicates: 0 },
-  'venue-shinjuku-loft': { extracted: 34, past: 24, stored: 10, duplicates: 0 },
-  'venue-shibuya-duo': { extracted: 31, past: 20, stored: 11, duplicates: 0 },
-  'venue-shibuya-womb': { extracted: 10, past: 0, stored: 10, duplicates: 0 },
-  'venue-daikanyama-unit': { extracted: 30, past: 21, stored: 8, duplicates: 1 }
+  'venue-shimokitazawa-shelter': { extracted: 9, past: 4, stored: 5, duplicates: 0 },
+  'venue-shinjuku-loft': { extracted: 13, past: 7, stored: 6, duplicates: 0 },
+  'venue-shibuya-duo': { extracted: 11, past: 7, stored: 4, duplicates: 0 },
+  'venue-shibuya-womb': { extracted: 6, past: 0, stored: 6, duplicates: 0 },
+  'venue-daikanyama-unit': { extracted: 9, past: 5, stored: 3, duplicates: 1 }
 }
 
 const count = async (h: Harness, sql: string, ...p: unknown[]): Promise<number> => (await h.db.prepare(sql).bind(...p).first<{ n: number }>())?.n ?? -1
@@ -60,7 +60,7 @@ describe('Contract: 初回の実行は 5 会場のフィクスチャから公演
   it('SHELTER: 19:00 開演の公演は start_text と start_at（UTC）を持ち、出典が付く', async () => {
     const h = await harness()
     await runSource(h.deps, sourceIdOf(SHELTER))
-    const [e] = await rows<Record<string, unknown>>(h.db, "SELECT * FROM events WHERE date = '2026-11-22' AND title_ja LIKE 'Shawoo%'")
+    const [e] = await rows<Record<string, unknown>>(h.db, "SELECT * FROM events WHERE date = '2026-11-22' AND title_ja LIKE 'テストバンドD%'")
     expect(e).toMatchObject({ start_text: '19:00', start_at: '2026-11-22T10:00:00.000Z', last_verified_at: NOW.toISOString(), needs_review: 0 })
     expect(String(e?.['source_url'])).toMatch(/^https:\/\//)
   })
@@ -100,15 +100,15 @@ describe('Contract: 2 回目以降', () => {
     await runSource(h.deps, sourceIdOf(SHELTER))
     const before = await rows<{ id: string; title_ja: string; updated_at: string }>(h.db, 'SELECT id, title_ja, updated_at FROM events ORDER BY id')
     const html = fixtureHtml(SHELTER)
-    expect(html).toContain('Shawoo 2周年記念ONEMAN LIVE')
-    h.web.pages.set(SHELTER, html.replace('Shawoo 2周年記念ONEMAN LIVE', 'Shawoo 3周年記念ONEMAN LIVE'))
+    expect(html).toContain('テストバンドD 2周年記念ONEMAN LIVE')
+    h.web.pages.set(SHELTER, html.replace('テストバンドD 2周年記念ONEMAN LIVE', 'テストバンドD 3周年記念ONEMAN LIVE'))
     h.clock.now = new Date('2026-11-22T03:00:00Z')
 
     const result = await runSource(h.deps, sourceIdOf(SHELTER))
     expect(result.kind === 'done' && result.summary).toMatchObject({ inserted: 0, updated: 1 })
     const after = await rows<{ id: string; title_ja: string; updated_at: string }>(h.db, 'SELECT id, title_ja, updated_at FROM events ORDER BY id')
     expect(after.map((e) => e.id)).toEqual(before.map((e) => e.id))
-    expect(after.filter((e, i) => e.title_ja !== before[i]?.title_ja).map((e) => e.title_ja)).toEqual(['Shawoo 3周年記念ONEMAN LIVE'])
+    expect(after.filter((e, i) => e.title_ja !== before[i]?.title_ja).map((e) => e.title_ja)).toEqual(['テストバンドD 3周年記念ONEMAN LIVE'])
     expect(after.filter((e, i) => e.updated_at !== before[i]?.updated_at)).toHaveLength(1)
     expect(await count(h, 'SELECT COUNT(*) n FROM crawl_runs WHERE changed = 1')).toBe(2)
     expect(h.r2.objects.size).toBe(2)
@@ -124,7 +124,7 @@ describe('Contract: 2 回目以降', () => {
     expect(await runSource(h.deps, sourceIdOf(SHELTER))).toMatchObject({ kind: 'done', status: 'not_modified' })
     const runs = await rows<{ http_status: number; changed: number; error: string | null }>(h.db, 'SELECT http_status, changed, error FROM crawl_runs ORDER BY id')
     expect(runs[1]).toEqual({ http_status: 304, changed: 0, error: null })
-    expect(await count(h, 'SELECT COUNT(*) n FROM events WHERE last_verified_at = ?', later.toISOString())).toBe(13)
+    expect(await count(h, 'SELECT COUNT(*) n FROM events WHERE last_verified_at = ?', later.toISOString())).toBe(5)
   })
 
   // Contract: 日付が過ぎた公演の last_verified_at は進めない（もう確認する意味がない）
@@ -211,16 +211,16 @@ describe('Contract: 件数の急減は何も壊さない（T12 の簡易版）',
   })
 
   // Contract: 半分未満に減ったページも同様に何も書かない
-  it('半分未満に減ったら count_drop で、公演は 10 件のまま', async () => {
+  it('半分未満に減ったら count_drop で、公演は 6 件のまま', async () => {
     const h = await harness()
     await runSource(h.deps, sourceIdOf(LOFT))
     const cards = fixtureHtml(LOFT).split('<div class="column')
-    expect(cards.length).toBeGreaterThan(20)
-    // 先頭の 3 カードだけ残す（34 件 → 3 件）
+    expect(cards.length).toBeGreaterThan(10)
+    // 先頭の 3 カードだけ残す（13 公演 → 2 公演。1 枚はメンテナンスで skip）
     h.web.pages.set(LOFT, cards.slice(0, 4).join('<div class="column'))
     h.clock.now = new Date('2026-11-22T03:00:00Z')
     expect(await runSource(h.deps, sourceIdOf(LOFT))).toMatchObject({ status: 'count_drop' })
-    expect(await count(h, 'SELECT COUNT(*) n FROM events')).toBe(10)
+    expect(await count(h, 'SELECT COUNT(*) n FROM events')).toBe(6)
   })
 
   // Contract: 初回から 0 件のページは no_events を記録するだけで、ハッシュを保存しない（次回も再評価される）

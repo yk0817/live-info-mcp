@@ -49,7 +49,7 @@ describe('Contract: Queue のメッセージ本文は Zod で検証する', () =
     const ok = msg({ source_id: sourceIdOf('venue-shibuya-womb'), attempt: 0 })
     await consumeMessages(h.deps, [ok])
     expect(ok.ack).toHaveBeenCalledOnce()
-    expect((await h.db.prepare('SELECT COUNT(*) n FROM events').first<{ n: number }>())?.n).toBe(10)
+    expect((await h.db.prepare('SELECT COUNT(*) n FROM events').first<{ n: number }>())?.n).toBe(6)
   })
 })
 

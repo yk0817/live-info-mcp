@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "strategy": "dom",
+  "comment": "shibuya-o.com 共通テーマ（O-nest / O-Crest / O-WEST で同じ構造）。月別ページ ?y=YYYY&m=M。日付は 11 / 01 形式で年は URL の y から取る（無ければ now から推定）。タイトルは title-top / title-main / title-bottom を連結。.p-scheduled-card__soldout（SOLD OUT）は sold_out に写す。同じ日の 1 部・2 部は別カード。",
+  "url_template": "https://shibuya-o.com/west/schedule/?y={YYYY}&m={M}",
+  "item": ".p-schedule__list > .p-scheduled-card",
+  "fields": {
+    "date": {
+      "source": { "selector": ".p-scheduled-card__date-item" },
+      "pattern": "(?<month>\\d{1,2})\\s*/\\s*(?<day>\\d{1,2})",
+      "year_source": { "source": { "from": "url" }, "pattern": "[?&]y=(?<year>\\d{4})" }
+    },
+    "title": {
+      "sources": [
+        { "selector": ".p-scheduled-card__title-top" },
+        { "selector": ".p-scheduled-card__title-main" },
+        { "selector": ".p-scheduled-card__title-bottom" }
+      ],
+      "mode": "join"
+    },
+    "artists": { "selector": ".p-scheduled-card__artist-item" },
+    "times": {
+      "source": { "selector": ".p-scheduled-card__date-open" },
+      "patterns": [
+        "OPEN\\s*(?<open>\\d{1,2}:\\d{2})\\s*/\\s*START\\s*(?<start>\\d{1,2}:\\d{2})",
+        "START\\s*(?<start>\\d{1,2}:\\d{2})",
+        "OPEN\\s*(?<open>\\d{1,2}:\\d{2})"
+      ]
+    },
+    "detail_url": { "selector": "a", "attr": "href" },
+    "status": [{ "value": "sold_out", "when": { "has": ".p-scheduled-card__soldout" } }]
+  }
+}

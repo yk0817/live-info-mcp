@@ -7,3 +7,4 @@ dist
 worker-configuration.d.ts
 *.tsbuildinfo
 wrangler.prod.jsonc
+apps/crawler/fixtures-local

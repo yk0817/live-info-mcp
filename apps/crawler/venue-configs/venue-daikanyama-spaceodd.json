@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "strategy": "dom",
+  "comment": "月別ページ ?event_year=YYYY&event_month=M（WordPress・Tailwind）。カードは独自タグ <d id=\"post-N\">。クラスは Tailwind のユーティリティなので、日付と時刻はカード全体の text に正規表現を当てる（2026. 11.01 / OPEN/START： 19:00/19:30。ラベルが二重の「OPEN/START： OPEN/START:19:00/19:30」もある）。「Coming soon…」の仮カードは skip。一覧に出演者・完売表記はない。",
+  "url_template": "https://spaceodd.jp/schedule/?event_year={YYYY}&event_month={M}",
+  "item": "d.fadeInUp",
+  "skip": [{ "reason": "placeholder: coming soon", "when": { "in": "h2", "text_matches": "^Coming soon" } }],
+  "fields": {
+    "date": {
+      "source": {},
+      "pattern": "(?<year>\\d{4})\\.?\\s*(?<month>\\d{1,2})\\.(?<day>\\d{1,2})"
+    },
+    "title": { "sources": [{ "selector": "h2" }], "mode": "first" },
+    "times": {
+      "source": {},
+      "patterns": ["OPEN/START[：:][^0-9]*(?<open>\\d{1,2}:\\d{2})\\s*/\\s*(?<start>\\d{1,2}:\\d{2})"]
+    },
+    "detail_url": { "selector": "a", "attr": "href" }
+  }
+}

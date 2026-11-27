@@ -13,3 +13,15 @@
 | `venue-shibuya-duo/schedule.html` | `https://www.duomusicexchange.com/schedule/2026/index_2026-11.html` |
 | `venue-shibuya-womb/schedule.html` | `https://www.womb.co.jp/ja`（トップの直近イベントカード） |
 | `venue-daikanyama-unit/schedule.html` | `https://www.unit-tokyo.com/schedule/`（2026-11） |
+| `venue-shibuya-o-nest/schedule.html` | `https://shibuya-o.com/nest/schedule/`（2026-11） |
+| `venue-shibuya-o-crest/schedule.html` | `https://shibuya-o.com/crest/schedule/`（2026-11） |
+| `venue-shibuya-o-west/schedule.html` | `https://shibuya-o.com/west/schedule/`（2026-11） |
+| `venue-shibuya-quattro/schedule.html` | `https://www.club-quattro.com/shibuya/schedule/`（2026-11） |
+| `venue-shibuya-lamama/schedule.html` | `https://www.lamama.net/schedule/`（2026-11） |
+| `venue-daikanyama-spaceodd/schedule.html` | `https://spaceodd.jp/schedule/`（2026-11） |
+| `venue-shibuya-circus/schedule.html` | `https://circus-tokyo.jp/schedule/`（直近一覧） |
+| `venue-ebisu-batica/schedule.html` | `https://batica.jp/events/`（The Events Calendar の月表示） |
+| `venue-nakameguro-solfa/schedule.html` | `https://nakameguro-solfa.com/events/`（同上） |
+| `venue-shibuya-theroom/schedule.html` | `https://theroom.jp/schedule/`（2026-11） |
+
+実ページの HTML を手元で使うときは `apps/crawler/fixtures-local/` に置く（.gitignore 済みでコミットされない）。batch 1 の調査メモは `docs/venues-batch-1.md`。

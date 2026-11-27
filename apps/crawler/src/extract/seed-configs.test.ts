@@ -17,10 +17,20 @@ function seeded(): DatabaseSync {
 }
 
 describe('Contract: venue-configs/*.json は抽出設定のスキーマに通る', () => {
-  it('Phase 0 の 5 会場ぶんの設定がある', () => {
+  it('Phase 0 の 5 会場と batch 1 の 10 会場ぶんの設定がある', () => {
     expect(configFiles.map((f) => f.replace(/\.json$/, '')).sort()).toEqual([
+      'venue-daikanyama-spaceodd',
       'venue-daikanyama-unit',
+      'venue-ebisu-batica',
+      'venue-nakameguro-solfa',
+      'venue-shibuya-circus',
       'venue-shibuya-duo',
+      'venue-shibuya-lamama',
+      'venue-shibuya-o-crest',
+      'venue-shibuya-o-nest',
+      'venue-shibuya-o-west',
+      'venue-shibuya-quattro',
+      'venue-shibuya-theroom',
       'venue-shibuya-womb',
       'venue-shimokitazawa-shelter',
       'venue-shinjuku-loft'
@@ -53,6 +63,6 @@ describe('Contract: seeds/source-configs.sql は migrations と seeds の上に�
     const snapshot = db.prepare('SELECT id, config_json, needs_review FROM sources ORDER BY id').all().map((r) => ({ ...r }))
     db.exec(read('seeds/source-configs.sql'))
     expect(db.prepare('SELECT id, config_json, needs_review FROM sources ORDER BY id').all().map((r) => ({ ...r }))).toEqual(snapshot)
-    expect(snapshot).toHaveLength(5)
+    expect(snapshot).toHaveLength(15)
   })
 })

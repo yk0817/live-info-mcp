@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "strategy": "dom",
+  "comment": "CLUB QUATTRO 共通テーマ（渋谷・名古屋・梅田・広島で同じ構造）。月別ページ ?ym=YYYYMM。日付は li の data-event-date（YYYY-MM-DD）から取る。txt-01 が出演者（/ と <br> 区切り。[ ] 内のメンバー表記も / で分かれてしまうのは未対応）、txt-02 が公演名で、公演名が空なら出演者で補う。時刻は dt が 開場/開演 の次の dd。「1回目 15:30 / 16:00. 2回目 …」は先頭の回だけ。完売表記は一覧にないので status は割り当てない。",
+  "url_template": "https://www.club-quattro.com/shibuya/schedule/?ym={YYYY}{MM}",
+  "item": ".cmn-event-list > li.list-item",
+  "fields": {
+    "date": {
+      "source": { "attr": "data-event-date" },
+      "pattern": "^(?<year>\\d{4})-(?<month>\\d{2})-(?<day>\\d{2})$"
+    },
+    "title": {
+      "sources": [{ "selector": ".txt-02" }, { "selector": ".txt-01" }],
+      "mode": "first"
+    },
+    "artists": {
+      "selector": ".txt-01",
+      "split": "\\s*[/／\\n]\\s*",
+      "strip": ["\\s*[（(]※?順不同[)）]$", "【[^】]*】"]
+    },
+    "times": {
+      "source": { "label": { "selector": "dt", "pattern": "^開場/開演$" } },
+      "patterns": ["(?<open>\\d{1,2}:\\d{2})\\s*/\\s*(?<start>\\d{1,2}:\\d{2})"]
+    },
+    "price_text": { "label": { "selector": "dt", "pattern": "^料金$" } },
+    "detail_url": { "selector": "a", "attr": "href" }
+  }
+}

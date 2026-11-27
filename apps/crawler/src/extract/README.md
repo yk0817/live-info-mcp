@@ -62,3 +62,11 @@ flowchart TD
 | duo | 1 日 2 部の `①13:45 / 14:30 ②18:15 / 19:00` は先頭の部だけ。`24:00` 単独は start のみ。ページに完売表記がなく status は null |
 | WOMB | トップページの SSR カードのみ（約 10 件）。月単位の網羅は RSC の JSON が要るので未対応。`23:00-4:30` は start=23:00 |
 | UNIT | 一覧に start がなく open のみ。出演者は区切りが公演ごとに揺れ、カンマ区切りの行は 1 件にまとまる |
+| O-nest / O-Crest / O-WEST | 同じテーマで URL 以外同じ設定。年は URL の `y`。`SOLD OUT` は sold_out |
+| CLUB QUATTRO | 日付は `data-event-date`。「1回目 … 2回目 …」は先頭の回だけ。出演者の `[ ]` 内のメンバー表記も `/` で分かれる |
+| La.mama / THE ROOM | 一覧に時刻がなく時刻は null。La.mama の DOM 順は日付順でない |
+| SPACE ODD | クラスが Tailwind だけなので日付・時刻はカード全体の text に正規表現。「Coming soon…」は skip |
+| Circus Tokyo | 直近の約 24 件のみ。開始-終了の表記で start だけ。【SOLD OUT】は sold_out |
+| BATICA / solfa | The Events Calendar の当月表示。カレンダーの開始時刻を open に。「TBA」は skip、終日の CLOSED は item にならない |
+
+batch 1 の会場ごとの調査メモと見送った会場は `docs/venues-batch-1.md`。

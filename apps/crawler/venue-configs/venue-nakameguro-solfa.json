@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "strategy": "dom",
+  "comment": "The Events Calendar（WordPress プラグイン）の月表示 https://nakameguro-solfa.com/events/（既定で当月。前後月の週の端の日も入る）。恵比寿 BATICA と同じプラグイン・同じ設定。休業日の「CLOSED」は終日の multiday-event として出るので item に入らない。1 公演 = article.tribe-events-calendar-month__calendar-event（モバイル用の複製 mobile-event と、終日の multiday-event は数えない）。日付はツールチップの time[datetime]（YYYY-MM-DD）。最初の time[datetime] は開始時刻（HH:MM）で、説明文の OPEN と一致するので open に写す（終了時刻は捨てる）。「TBA」の仮枠は skip。一覧に出演者・完売表記はない。",
+  "item": "article.tribe-events-calendar-month__calendar-event",
+  "skip": [{ "reason": "placeholder: TBA", "when": { "in": ".tribe-events-calendar-month__calendar-event-title", "text_matches": "^TBA$" } }],
+  "fields": {
+    "date": {
+      "source": { "selector": ".tribe-events-calendar-month__calendar-event-tooltip-datetime time", "attr": "datetime" },
+      "pattern": "^(?<year>\\d{4})-(?<month>\\d{2})-(?<day>\\d{2})$"
+    },
+    "title": { "sources": [{ "selector": ".tribe-events-calendar-month__calendar-event-title" }], "mode": "first" },
+    "times": {
+      "source": { "selector": ".tribe-events-calendar-month__calendar-event-datetime time", "attr": "datetime" },
+      "patterns": ["^(?<open>\\d{1,2}:\\d{2})$"]
+    },
+    "detail_url": { "selector": ".tribe-events-calendar-month__calendar-event-title a", "attr": "href" }
+  }
+}

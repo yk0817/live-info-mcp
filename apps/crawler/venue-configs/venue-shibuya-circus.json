@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "strategy": "dom",
+  "comment": "WP Event Manager の一覧（https://circus-tokyo.jp/schedule/）。月別 URL はなく、直近の公演（約 24 件）が SSR で出る。それより先は Ajax の「もっと見る」なので取れない。日付と時刻は .wpem-event-date-time-text の「2026-11-27 - 23:00 - 2026-11-28 - 05:00」から取り、先頭の時刻を start、終了は捨てる（WOMB と同じく開始-終了の表記で open は別記されない）。日付は興行日（開始日）。一覧に出演者はない。完売はタイトル先頭の【SOLD OUT】だけなので、それを sold_out に写す（タイトルからは外さない）。",
+  "item": ".wpem-event-layout-wrapper",
+  "fields": {
+    "date": {
+      "source": { "selector": ".wpem-event-date-time-text" },
+      "pattern": "^(?<year>\\d{4})-(?<month>\\d{2})-(?<day>\\d{2})"
+    },
+    "title": { "sources": [{ "selector": ".wpem-event-title .wpem-heading-text" }], "mode": "first" },
+    "times": {
+      "source": { "selector": ".wpem-event-date-time-text" },
+      "patterns": ["^\\d{4}-\\d{2}-\\d{2}\\s*-\\s*(?<start>\\d{1,2}:\\d{2})"]
+    },
+    "detail_url": { "selector": "a", "attr": "href" },
+    "status": [{ "value": "sold_out", "when": { "in": ".wpem-event-title", "text_matches": "【SOLD OUT】" } }]
+  }
+}

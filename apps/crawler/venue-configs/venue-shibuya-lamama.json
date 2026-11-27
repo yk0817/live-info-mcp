@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "strategy": "dom",
+  "comment": "月別ページ ?month=YYYY-MM（WordPress）。1 公演 = a.pickup_btn.schedule で、ページ内は「今後の公演 → NEXT MONTH PICK UP（翌月の一部）→ FINISHED（当月の終了分）」の順に並ぶので DOM 順は日付順ではない。日付は data-schedule（YYYY-MM-DD）。一覧に開場・開演の時刻はなく、DAY / NIGHT の区分（.time_zone）だけなので時刻は null。同じ日の DAY と NIGHT は別公演。出演者は .member を / で分け、「MC：」「ゲスト：」「(O.A.)」の前置きと末尾の「他」「ほか」を外し、「※」で始まる注記と and more… は捨てる。",
+  "url_template": "https://www.lamama.net/schedule/?month={YYYY}-{MM}",
+  "item": "a.pickup_btn.schedule",
+  "fields": {
+    "date": {
+      "source": { "attr": "data-schedule" },
+      "pattern": "^(?<year>\\d{4})-(?<month>\\d{2})-(?<day>\\d{2})$"
+    },
+    "title": { "sources": [{ "selector": ".event" }], "mode": "first" },
+    "artists": {
+      "selector": ".member",
+      "split": "\\s*[/／]\\s*",
+      "strip": ["^\\s*MC[：:]\\s*", "^\\s*ゲスト[：:]\\s*", "^\\s*\\(O\\.A\\.\\)\\s*", "\\s*(他|ほか)\\s*$"],
+      "exclude": ["^※", "^(and more…?|…|\\.{2,})$"]
+    },
+    "detail_url": { "attr": "href" }
+  }
+}

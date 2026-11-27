@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { consumeMessages, type QueueMessage } from './consume'
 import { crawlJobSchema, selectDueSources } from './schedule'
-import { harness, NOW, sourceIdOf, VENUE_IDS } from './test-support'
+import { harness, NOW, rows, sourceIdOf, VENUE_IDS } from './test-support'
 
 const msg = (body: unknown, attempts = 1) => ({
   body,
@@ -56,18 +56,23 @@ describe('Contract: Queue のメッセージ本文は Zod で検証する', () =
 describe('Contract: selectDueSources は今回回す source を選ぶ', () => {
   const insertRun = (h: Awaited<ReturnType<typeof harness>>, sourceId: string, startedAt: string) =>
     h.db.prepare('INSERT INTO crawl_runs (source_id, started_at) VALUES (?, ?)').bind(sourceId, startedAt).run()
+  // シードの全 source（会場を足しても期待値を書き換えずに済むよう、DB から取る）
+  const allSourceIds = async (h: Awaited<ReturnType<typeof harness>>): Promise<string[]> =>
+    (await rows<{ id: string }>(h.db, 'SELECT id FROM sources ORDER BY id')).map((r) => r.id)
 
   it('robots_ok=1 かつ設定あり。直近 20 時間に実行があれば除く', async () => {
     const h = await harness()
-    expect(await selectDueSources(h.db, NOW, false)).toEqual([...VENUE_IDS].map(sourceIdOf).sort())
+    const seeded = await allSourceIds(h)
+    expect(seeded).toHaveLength(15)
+    expect(seeded).toEqual(expect.arrayContaining([...VENUE_IDS].map(sourceIdOf)))
+    expect(await selectDueSources(h.db, NOW, false)).toEqual(seeded)
 
     await insertRun(h, sourceIdOf('venue-shibuya-duo'), '2026-11-20T12:00:01.000Z') // 15 時間前 → 除く
     await insertRun(h, sourceIdOf('venue-shibuya-womb'), '2026-11-20T06:00:00.000Z') // 21h 前 → 対象
     await h.db.prepare("UPDATE sources SET robots_ok = 0 WHERE id = ?").bind(sourceIdOf('venue-shinjuku-loft')).run()
     await h.db.prepare("UPDATE sources SET config_json = NULL WHERE id = ?").bind(sourceIdOf('venue-daikanyama-unit')).run()
-    expect(await selectDueSources(h.db, NOW, false)).toEqual(
-      [sourceIdOf('venue-shimokitazawa-shelter'), sourceIdOf('venue-shibuya-womb')].sort()
-    )
+    const excluded = ['venue-shibuya-duo', 'venue-shinjuku-loft', 'venue-daikanyama-unit'].map((v) => `src_${v}`)
+    expect(await selectDueSources(h.db, NOW, false)).toEqual(seeded.filter((id) => !excluded.includes(id)))
   })
 
   // Contract: force は実行間隔だけを無視する（robots 不許可・設定なしは force でも回さない）
@@ -78,6 +83,6 @@ describe('Contract: selectDueSources は今回回す source を選ぶ', () => {
     const forced = await selectDueSources(h.db, NOW, true)
     expect(forced).toContain(sourceIdOf('venue-shibuya-duo'))
     expect(forced).not.toContain(sourceIdOf('venue-shinjuku-loft'))
-    expect(forced).toHaveLength(4)
+    expect(forced).toHaveLength((await allSourceIds(h)).length - 1)
   })
 })

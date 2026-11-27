@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "strategy": "dom",
+  "comment": "月別ページ ?ym=YYYY-MM（WordPress・Elementor のショートコード）。日付は .date の「2026-11-03 TUE」。一覧に時刻はない。出演者欄 .dj は <br> 区切りで、[DJ] [GUEST DJ] [LIVE] のような見出し行が混ざるので、行頭の見出しを外す（見出しだけの行は空になって捨てられる）。バンドの編成行（(Gt)名前 など）も 1 行 1 組として入る（区別できない）。同じ日の LIVE と DJ の 2 公演は別カード。",
+  "url_template": "https://theroom.jp/schedule/?ym={YYYY}-{MM}",
+  "item": ".schedule-card",
+  "fields": {
+    "date": {
+      "source": { "selector": ".date" },
+      "pattern": "^(?<year>\\d{4})-(?<month>\\d{2})-(?<day>\\d{2})"
+    },
+    "title": { "sources": [{ "selector": ".title" }], "mode": "first" },
+    "artists": {
+      "selector": ".dj",
+      "split": "\\s*\\n\\s*",
+      "strip": ["^\\[[^\\]]*\\]\\s*"]
+    },
+    "detail_url": { "selector": "a", "attr": "href" }
+  }
+}

@@ -13,6 +13,8 @@ interface VenueCase {
   sourceUrl: string
   itemCount: number
   eventCount: number
+  // ページの並びが日付順でない会場（La.mama は「今後 → 翌月 → 終了分」の順）は false
+  domOrderIsDateOrder?: false
 }
 
 const VENUES: Record<string, VenueCase> = {
@@ -20,7 +22,18 @@ const VENUES: Record<string, VenueCase> = {
   loft: { id: 'venue-shinjuku-loft', sourceUrl: 'https://www.loft-prj.co.jp/schedule/loft/schedule', itemCount: 14, eventCount: 13 },
   duo: { id: 'venue-shibuya-duo', sourceUrl: 'https://www.duomusicexchange.com/schedule/2026/index_2026-11.html', itemCount: 11, eventCount: 11 },
   womb: { id: 'venue-shibuya-womb', sourceUrl: 'https://www.womb.co.jp/ja/events', itemCount: 6, eventCount: 6 },
-  unit: { id: 'venue-daikanyama-unit', sourceUrl: 'https://www.unit-tokyo.com/schedule/', itemCount: 9, eventCount: 9 }
+  unit: { id: 'venue-daikanyama-unit', sourceUrl: 'https://www.unit-tokyo.com/schedule/', itemCount: 9, eventCount: 9 },
+  // batch 1（渋谷近郊）
+  onest: { id: 'venue-shibuya-o-nest', sourceUrl: 'https://shibuya-o.com/nest/schedule/?y=2026&m=11', itemCount: 5, eventCount: 5 },
+  ocrest: { id: 'venue-shibuya-o-crest', sourceUrl: 'https://shibuya-o.com/crest/schedule/?y=2026&m=11', itemCount: 3, eventCount: 3 },
+  owest: { id: 'venue-shibuya-o-west', sourceUrl: 'https://shibuya-o.com/west/schedule/?y=2026&m=11', itemCount: 3, eventCount: 3 },
+  quattro: { id: 'venue-shibuya-quattro', sourceUrl: 'https://www.club-quattro.com/shibuya/schedule/?ym=202611', itemCount: 4, eventCount: 4 },
+  lamama: { id: 'venue-shibuya-lamama', sourceUrl: 'https://www.lamama.net/schedule/?month=2026-11', itemCount: 4, eventCount: 4, domOrderIsDateOrder: false },
+  spaceodd: { id: 'venue-daikanyama-spaceodd', sourceUrl: 'https://spaceodd.jp/schedule/?event_year=2026&event_month=11', itemCount: 5, eventCount: 4 },
+  circus: { id: 'venue-shibuya-circus', sourceUrl: 'https://circus-tokyo.jp/schedule/', itemCount: 4, eventCount: 4 },
+  batica: { id: 'venue-ebisu-batica', sourceUrl: 'https://batica.jp/events/', itemCount: 4, eventCount: 3 },
+  solfa: { id: 'venue-nakameguro-solfa', sourceUrl: 'https://nakameguro-solfa.com/events/', itemCount: 4, eventCount: 3 },
+  theroom: { id: 'venue-shibuya-theroom', sourceUrl: 'https://theroom.jp/schedule/?ym=2026-11', itemCount: 4, eventCount: 4 }
 }
 
 // crawler の tsconfig は workers-types の URL 型なので、node:fs には URL でなくパス文字列を渡す
@@ -43,7 +56,7 @@ function pick(result: ExtractionResult, date: string, titleIncludes: string): Ex
 
 const names = (e: ExtractedEvent): string[] => e.artists.map((a) => a.name)
 
-describe('Contract: 5 会場のフィクスチャから抽出した公演はスキーマに通り、件数がフィクスチャの公演数と一致する', () => {
+describe('Contract: 各会場のフィクスチャから抽出した公演はスキーマに通り、件数がフィクスチャの公演数と一致する', () => {
   for (const [key, venue] of Object.entries(VENUES)) {
     it(`${venue.id}: ${venue.itemCount} 件の item から ${venue.eventCount} 公演`, () => {
       const r = results[key] as ExtractionResult
@@ -55,10 +68,12 @@ describe('Contract: 5 会場のフィクスチャから抽出した公演はス�
       expect(r.issues).toEqual([])
     })
 
-    it(`${venue.id}: 公演は DOM 順（日付は昇順）`, () => {
-      const dates = (results[key] as ExtractionResult).events.map((e) => e.date)
-      expect(dates).toEqual([...dates].sort())
-    })
+    if (venue.domOrderIsDateOrder !== false) {
+      it(`${venue.id}: 公演は DOM 順（日付は昇順）`, () => {
+        const dates = (results[key] as ExtractionResult).events.map((e) => e.date)
+        expect(dates).toEqual([...dates].sort())
+      })
+    }
   }
 })
 
@@ -259,6 +274,187 @@ describe('Contract: 代官山UNIT', () => {
     expect(day).toHaveLength(2)
     for (const e of day) expect(names(e).some((n) => n.includes('※'))).toBe(false)
     expect(names(day[0] as ExtractedEvent)).toEqual(['架空ユニットO', '架空ユニットP', '架空ユニットQ'])
+  })
+})
+
+describe('Contract: 渋谷 O-nest / O-Crest / O-WEST（shibuya-o.com 共通テーマ）', () => {
+  const nest = results['onest'] as ExtractionResult
+
+  it('年は URL の y、日付は「11 / 01」から作り、OPEN / START を open/start に分ける', () => {
+    const e = pick(nest, '2026-11-01', '架空生誕祭2026')
+    expect([e.open_text, e.start_text]).toEqual(['10:45', '11:15'])
+    expect(names(e)).toEqual(['テストアイドルA'])
+    expect(e.source_url).toBe('https://shibuya-o.com/nest/schedule/sample-birthday-900101/')
+  })
+
+  it('SOLD OUT のカードだけ sold_out、ほかは null。出演者末尾の空白は落とす', () => {
+    const e = pick(nest, '2026-11-01', 'Re:TEST')
+    expect(e.status).toBe('sold_out')
+    expect(names(e)).toEqual(['Sample Band', 'Fictional Guest', 'Test Opener'])
+    expect(nest.events.filter((x) => x.status !== null)).toHaveLength(1)
+  })
+
+  it('title-top / main / bottom を連結し、全角空白だけの出演者欄は出演者なし', () => {
+    const e = pick(nest, '2026-11-14', 'テスト楽団')
+    expect(e.title_ja).toBe('架空レコーズ presents テスト楽団 / サンプル合奏団 「架空と試験の夜」')
+    expect(e.artists).toEqual([])
+  })
+
+  it('同じ日の 1 部・2 部は別公演', () => {
+    expect(nest.events.filter((e) => e.date === '2026-11-28').map((e) => e.start_text)).toEqual(['11:30', '18:00'])
+  })
+
+  it('O-Crest と O-WEST も同じ設定構造で読め、SOLD OUT は sold_out', () => {
+    const crest = results['ocrest'] as ExtractionResult
+    expect(pick(crest, '2026-11-03', 'NEXT SAMPLE').title_ja).toBe('O-Crest pre. NEXT SAMPLE')
+    expect(pick(crest, '2026-11-24', 'SAMPLE KISS').status).toBe('sold_out')
+    const west = results['owest'] as ExtractionResult
+    const e = pick(west, '2026-11-22', 'iDOL SAMPLE')
+    expect([e.open_text, e.start_text]).toEqual(['18:20', '19:00'])
+    expect(names(e)).toEqual(['テストシーン', 'さんぷるきゅおん！', 'myotest'])
+    // 出演者欄（ul）が無いカードも公演として残る
+    expect(pick(west, '2026-11-05', 'サンプル全国編').artists).toEqual([])
+  })
+})
+
+describe('Contract: 渋谷CLUB QUATTRO', () => {
+  const r = results['quattro'] as ExtractionResult
+
+  it('日付は data-event-date、時刻は dt「開場/開演」の dd、料金は dt「料金」の dd', () => {
+    const e = pick(r, '2026-11-01', 'Look TEST')
+    expect([e.open_text, e.start_text]).toEqual(['17:15', '18:00'])
+    expect(e.price_text).toBe('前売 ￥4,400')
+    expect(names(e)).toEqual(['sample'])
+    expect(e.source_url).toBe('https://www.club-quattro.com/shibuya/schedule/detail/?cd=900101')
+  })
+
+  it('出演者は / で分け、（※順不同) を外す', () => {
+    expect(names(pick(r, '2026-11-03', 'DREAM TEST'))).toEqual(['THE SAMPLEGUGU', 'テストティカ', 'ARCHIVE WALKER(S)'])
+  })
+
+  it('「1回目 … 2回目 …」は先頭の回の時刻を採る', () => {
+    const e = pick(r, '2026-11-08', 'THE FICTIONS 2DAYS')
+    expect([e.open_text, e.start_text]).toEqual(['15:30', '16:00'])
+  })
+
+  it('公演名が空なら出演者欄で補い、出演者は <br> でも分ける', () => {
+    const e = pick(r, '2026-11-23', 'TestNoboAz')
+    expect(names(e)).toEqual(['TestNoboAz', 'SAMPLE BOYS'])
+  })
+})
+
+describe('Contract: 渋谷La.mama', () => {
+  const r = results['lamama'] as ExtractionResult
+
+  it('日付は data-schedule から取り、並びは「今後 → 翌月 → 終了分」の DOM 順のまま', () => {
+    expect(r.events.map((e) => e.date)).toEqual(['2026-11-21', '2026-11-21', '2026-12-03', '2026-11-01'])
+  })
+
+  it('一覧に時刻はなく、同じ日の DAY と NIGHT は時刻 null の別公演', () => {
+    const day = r.events.filter((e) => e.date === '2026-11-21')
+    expect(day.map((e) => e.source_url)).toEqual(['https://www.lamama.net/article/s-20261121-d/', 'https://www.lamama.net/article/s-20261121-n/'])
+    for (const e of day) expect([e.open_text, e.start_text]).toEqual([null, null])
+  })
+
+  it('「MC：」の前置きと末尾の「他」「ほか」を外し、※ の注記は出演者に入れない', () => {
+    expect(names(pick(r, '2026-11-21', '架空新人コント大会'))).toEqual(['テスト司会者', 'サンプル芸人（架空コンビ）'])
+    expect(names(pick(r, '2026-11-21', '架空ナイト'))).toEqual(['TEST KICHI-GUY GENERATION', '架空太郎'])
+  })
+
+  it('(O.A.) の前置きを外し、and more… は出演者に入れない', () => {
+    expect(names(pick(r, '2026-12-03', 'DAYTEST'))).toEqual(['架空歌手(テストバンド)', 'サンプル奏者', 'FICTIONS'])
+  })
+})
+
+describe('Contract: 代官山SPACE ODD', () => {
+  const r = results['spaceodd'] as ExtractionResult
+
+  it('「Coming soon…」の仮カードは公演にせず、理由つきで skipped に入る（独自タグ d のカードだけを item にする）', () => {
+    expect(r.skipped.map((s) => s.reason)).toEqual(['placeholder: coming soon'])
+    expect(r.events.some((e) => e.date === '2026-11-01')).toBe(false)
+  })
+
+  it('日付はカードの「2026. 11.05」、時刻は「OPEN/START： 19:00/19:30」から取る', () => {
+    const e = pick(r, '2026-11-05', 'Sample Custom 6-Day1')
+    expect([e.open_text, e.start_text]).toEqual(['19:00', '19:30'])
+    expect(e.source_url).toBe('https://spaceodd.jp/sample-custom-day1/')
+  })
+
+  it('ラベルが二重の「OPEN/START： OPEN/START:18:15/19:00」も読める', () => {
+    const e = pick(r, '2026-11-06', 'Day2')
+    expect([e.open_text, e.start_text]).toEqual(['18:15', '19:00'])
+  })
+
+  it('時刻のないカードは時刻 null・出演者なし', () => {
+    const e = pick(r, '2026-11-03', 'DIVE TEST')
+    expect([e.open_text, e.start_text, e.artists]).toEqual([null, null, []])
+  })
+})
+
+describe('Contract: 渋谷Circus Tokyo', () => {
+  const r = results['circus'] as ExtractionResult
+
+  it('「2026-11-21 - 23:00 - 2026-11-22 - 05:00」は興行日 11/21・start=23:00（終了は捨てる）', () => {
+    const e = pick(r, '2026-11-21', 'FOR FRIENDS')
+    expect([e.open_text, e.start_text]).toEqual([null, '23:00'])
+    expect(e.source_url).toBe('https://circus-tokyo.jp/event/sample-for-friends/')
+  })
+
+  it('タイトルの【SOLD OUT】は sold_out に写し、ほかは null', () => {
+    expect(pick(r, '2026-11-28', 'Fictional Bumpa').status).toBe('sold_out')
+    expect(r.events.filter((e) => e.status !== null)).toHaveLength(1)
+  })
+
+  it('年は表記どおり（翌年 2 月の公演は 2027 年）', () => {
+    expect(pick(r, '2027-02-04', 'SECOND SHOW').start_text).toBe('19:00')
+  })
+})
+
+describe('Contract: 恵比寿BATICA / 中目黒solfa（The Events Calendar の月表示）', () => {
+  const batica = results['batica'] as ExtractionResult
+  const solfa = results['solfa'] as ExtractionResult
+
+  it('日付はツールチップの time[datetime]、最初の time[datetime] を open にする（終了時刻は捨てる）', () => {
+    const e = pick(batica, '2026-11-03', 'kids test')
+    expect([e.open_text, e.start_text]).toEqual(['23:30', null])
+    expect(e.source_url).toBe('https://batica.jp/events/kids-test-vol-2/')
+  })
+
+  it('前月の週の端の日の公演もそのまま入り、同じ日の昼夜は別公演', () => {
+    expect(batica.events[0]?.date).toBe('2026-10-31')
+    expect(batica.events.filter((e) => e.date === '2026-11-03').map((e) => e.open_text)).toEqual(['16:00', '23:30'])
+  })
+
+  it('「TBA」の仮枠は skip し、モバイル用の複製は数えない', () => {
+    expect(batica.skipped.map((s) => s.reason)).toEqual(['placeholder: TBA'])
+    expect(batica.events.filter((e) => e.title_ja === 'TEST BOX')).toHaveLength(1)
+  })
+
+  it('solfa の休業日（終日の CLOSED）は item にならず、翌月頭の公演は入る', () => {
+    expect(solfa.events.some((e) => e.title_ja === 'CLOSED')).toBe(false)
+    expect(solfa.events.map((e) => e.date)).toEqual(['2026-11-07', '2026-11-07', '2026-12-04'])
+    expect(pick(solfa, '2026-11-07', 'THE TEST').open_text).toBe('23:00')
+    expect(solfa.skipped.map((s) => s.reason)).toEqual(['placeholder: TBA'])
+  })
+})
+
+describe('Contract: 渋谷THE ROOM', () => {
+  const r = results['theroom'] as ExtractionResult
+
+  it('日付は「2026-11-03 TUE」から取り、一覧に時刻はない', () => {
+    const e = pick(r, '2026-11-03', 'SAMPLE PREMIUM LOUNGE')
+    expect([e.open_text, e.start_text]).toEqual([null, null])
+    expect(e.source_url).toBe('https://theroom.jp/schedule/900103/')
+  })
+
+  it('出演者は <br> で分け、[DJ] [GUEST DJ] の見出し行は捨て、/ を含む名前は分けない', () => {
+    expect(names(pick(r, '2026-11-03', 'SAMPLE PREMIUM LOUNGE'))).toEqual(['TEST KURODA/架空大介 (sample)', 'DJ FICTION (TESTSTER)', 'DJ SAMPLESAKI (SAMPLE RECORDS)'])
+    expect(names(pick(r, '2026-11-04', 'noi-test'))).toEqual(['Testo Samplewandt', 'DJ SAMPLE!a', 'dj Kakuu'])
+  })
+
+  it('行頭の [LIVE] 見出しは外し、同じ日の LIVE と DJ は別公演', () => {
+    expect(names(pick(r, '2026-11-28', 'ROOT TEST'))[0]).toBe('"ROOT TEST"')
+    expect(r.events.filter((e) => e.date === '2026-11-28')).toHaveLength(2)
   })
 })
 

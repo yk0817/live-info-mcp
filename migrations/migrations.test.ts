@@ -133,19 +133,22 @@ describe('D1 schema', () => {
 })
 
 describe('seeds/venues.sql', () => {
-  // Contract: シードは冪等で、ライブハウス 3・クラブ 2 の計 5 件。人が埋める項目は推定しない
-  it('is idempotent and holds 3 livehouse + 2 club with unknowns left NULL', () => {
+  // Contract: シードは冪等で、Phase 0（ライブハウス 3・クラブ 2）と batch 1（ライブハウス 6・クラブ 4）の計 15 件。
+  // 人が埋める項目は推定しない。capacity は公式サイトに明記された La.mama（230）だけ
+  it('is idempotent and holds 9 livehouse + 6 club with unknowns left NULL', () => {
     const db = migrated()
     db.exec(seedSql)
     db.exec(seedSql)
-    expect(db.prepare('SELECT COUNT(*) AS n FROM venues').get()?.n).toBe(5)
+    expect(db.prepare('SELECT COUNT(*) AS n FROM venues').get()?.n).toBe(15)
     const kinds = db.prepare('SELECT venue_kind, COUNT(*) AS n FROM venues GROUP BY venue_kind ORDER BY venue_kind').all()
     expect(kinds.map((r) => ({ ...r }))).toEqual([
-      { venue_kind: 'club', n: 2 },
-      { venue_kind: 'livehouse', n: 3 }
+      { venue_kind: 'club', n: 6 },
+      { venue_kind: 'livehouse', n: 9 }
     ])
-    const filled = db.prepare('SELECT COUNT(*) AS n FROM venues WHERE capacity IS NOT NULL OR lat IS NOT NULL OR lng IS NOT NULL OR official_url IS NOT NULL').get()
-    expect(filled?.n).toBe(0)
+    const located = db.prepare('SELECT COUNT(*) AS n FROM venues WHERE lat IS NOT NULL OR lng IS NOT NULL OR official_url IS NOT NULL').get()
+    expect(located?.n).toBe(0)
+    const withCapacity = db.prepare('SELECT id, capacity FROM venues WHERE capacity IS NOT NULL').all()
+    expect(withCapacity.map((r) => ({ ...r }))).toEqual([{ id: 'venue-shibuya-lamama', capacity: 230 }])
   })
 
   // Contract: マイグレーションにはデータを入れない

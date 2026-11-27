@@ -33,7 +33,7 @@ npx wrangler r2 bucket create live-info-raw-html
 npx wrangler queues create live-info-crawl --message-retention-period-secs 86400
 ```
 
-- D1 の出力にある `database_id`（UUID）を控える
+- D1 の出力にある `database_id`（UUID）だけを控える。出力の設定例の `binding`（`live_info` など）はコピーしない。コード側は `DB` で参照している
 - Queue の保持期間は Free では 60〜86400 秒。既定の 24 時間でよいので、上の指定は省いてもよい
 - 生 HTML を 30 日で消すルール（要件）を設定する。反映は `list` で確かめる
 
@@ -109,6 +109,7 @@ npx wrangler deploy -c apps/mcp/wrangler.prod.jsonc
 
 - 初回は `workers.dev` のサブドメインの登録を聞かれる。URL（`live-info-mcp.<サブドメイン>.workers.dev`）に残るので、決めてよい名前にする
 - **crawler をデプロイした時点で毎時 0 分の cron が有効になり、次の 0 分に 5 会場の取得が始まる。** 連絡先 URL を入れてからデプロイすること
+- 連絡先 URL がまだ決まっていないときは、`apps/crawler/wrangler.prod.jsonc` の `triggers` を `{ "crons": [] }` にしてデプロイする（Worker と Queue だけ用意し、取得は始めない）。決まったら `vars` を足し、`crons` を `["0 * * * *"]` に戻して再デプロイする（2026-11-25 の初回デプロイはこの形）
 - 止めたいときは「止める・戻す」を参照
 
 ## 6. 動作確認

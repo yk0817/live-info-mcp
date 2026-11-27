@@ -4,6 +4,8 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-11-19",
   "compatibility_flags": ["nodejs_compat"],
+  // バージョンごとのプレビュー URL を公開しない（workers.dev の本番 URL だけにする）
+  "preview_urls": false,
   "triggers": { "crons": ["0 * * * *"] },
   "d1_databases": [
     {
